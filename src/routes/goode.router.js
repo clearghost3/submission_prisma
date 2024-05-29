@@ -8,7 +8,7 @@ const router=express();
 
 router.get('/',(req,res)=>{return res.status(200).json({Message:"상품들의 모습입니다!"})});
 
-//상품 생성
+//상품 생성 API
 router.post('/goods',async(req,res,next)=>{
     const {goodsname,goodsinfo,password,manager,status}=req.body;
 
@@ -27,7 +27,7 @@ router.post('/goods',async(req,res,next)=>{
     return res.json({Message:"상품이 성공적으로 생성되었습니다"});
 });
 
-//상품 조회
+//상품 조회  API=========================
 router.get('/goods',async(req,res,next)=>{
     const goods=await prisma.goods.findMany({
         select: {
@@ -38,7 +38,7 @@ router.get('/goods',async(req,res,next)=>{
     return res.status(200).json({goods});
 });
 
-//상품 상세 조회
+//상품 상세 조회 API
 router.get('/goods/:goodsid',async(req,res)=>{
     const goodsid=req.params.goodsid;
     const good=await prisma.goods.findFirst({
@@ -50,5 +50,41 @@ router.get('/goods/:goodsid',async(req,res)=>{
     });
     return res.status(200).json({good});
 });
+
+//상품 수정 API=========================
+router.put('/goods/:goodsid',async(req,res)=>{
+    const goodsid=req.params.goodsid;
+
+    const {goodsinfo,password}=req.body;
+    if (!goodsinfo||!password) return res.status(401).json({ErrorMessage:"비밀번호나 수정할 데이터가 없습니다."});
+    
+    const goodspassword=await prisma.goods.findFirst({
+        where:{goodsid:+goodsid},select: {
+            password:true
+        }
+    });
+    
+    console.log(await bcrypt.hash(password,10));
+    console.log(goodspassword.password);
+
+
+
+
+    if (!(await bcrypt.compare(password,goodspassword.password))) {
+
+        return res.status(401).json({ErrorMessage:"존재하지 않는 비밀번호입니다!"});
+    }
+    const updatedGoods = await prisma.goods.update({
+        where: { goodsid: +goodsid },
+        data: { goodsinfo: goodsinfo }
+    });
+    return res.status(200).json({Message:"성공적으로 수정되었습니다."})
+});
+
+//상품 삭제 API=========================
+router.delete('/go',(req,res)=>{
+
+});
+
 
 export default router;
